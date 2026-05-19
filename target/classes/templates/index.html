@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务管理器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5e6d3 url('/images/background.jpg') no-repeat center center fixed;
+            background-size: cover;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .card-header h2 {
+            color: #333;
+            font-weight: 600;
+            font-size: 1.5em;
+        }
+
+        .card-header .badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .task-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .form-group label {
+            color: #666;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .task-item {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .task-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .task-item.urgent {
+            border-left-color: #ff6b6b;
+            background: #fff5f5;
+        }
+
+        .task-item.completed {
+            border-left-color: #51cf66;
+            opacity: 0.7;
+        }
+
+        .task-item.due-in-one-week {
+            border-left-color: #ffd43b;
+            background: #fffbf0;
+        }
+
+        .task-item.due-in-three-days {
+            border-left-color: #fd7e14;
+            background: #fff8f0;
+        }
+
+        .task-item.due-in-one-day {
+            border-left-color: #4dabf7;
+            background: #f0f7ff;
+        }
+
+        .task-item.urgent .task-title {
+            color: #ff6b6b;
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .task-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.8em;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-edit {
+            background: #ffd43b;
+            color: #333;
+        }
+
+        .btn-delete {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-complete {
+            background: #51cf66;
+            color: white;
+        }
+
+        .btn-batch-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-batch-delete:hover {
+            background: #c82333;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .select-all {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-time {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .time-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .progress-container {
+            margin-top: 10px;
+        }
+
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-fill.completed {
+            background: linear-gradient(90deg, #51cf66 0%, #40c057 100%);
+        }
+
+        .deadline {
+            display: inline-block;
+            padding: 3px 10px;
+            background: #fff3cd;
+            color: #856404;
+            border-radius: 5px;
+            font-size: 0.85em;
+            margin-left: 10px;
+        }
+
+        .deadline.soon {
+            background: #ffe3e3;
+            color: #c92a2a;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            font-weight: 400;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .emoji {
+            font-size: 1.2em;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 任务管理器</h1>
+            <p>简洁高效的任务管理工具</p>
+        </header>
+
+        <div class="main-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="section-title"><span class="emoji">✨</span> 新建任务</h2>
+                </div>
+                <form th:action="@{/tasks}" th:object="${newTask}" method="post" class="task-form">
+                    <div class="form-group">
+                        <label>任务名称</label>
+                        <input type="text" th:field="*{title}" placeholder="输入任务名称" required>
+                    </div>
+                    <div class="form-group">
+                        <label>任务描述</label>
+                        <textarea th:field="*{description}" rows="3" placeholder="输入任务描述（可选）"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>开始时间</label>
+                            <input type="datetime-local" th:field="*{startTime}" required>
+                        </div>
+                        <div class="form-group">
+                            <label>截止时间</label>
+                            <input type="datetime-local" th:field="*{endTime}" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>初始进度 (%)</label>
+                            <input type="number" th:field="*{progress}" min="0" max="100" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>紧急任务</label>
+                            <input type="checkbox" th:field="*{isUrgent}" style="width: auto; margin-top: 10px;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">创建任务</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="section-title">
+                        <span class="emoji">🎯</span> 进行中的任务
+                        <span class="badge" th:text="${tasks.size()}">0</span>
+                    </h2>
+                </div>
+                <div th:if="${tasks.size() > 0}">
+                    <div class="select-all">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="selectAllInProgress" onchange="toggleSelectAll('inProgress')">
+                            <span>全选</span>
+                        </label>
+                        <button class="btn btn-batch-delete" onclick="batchDelete('inProgress')" style="padding: 8px 16px; font-size: 0.9em;">批量删除</button>
+                    </div>
+                    <div class="task-list">
+                        <div th:each="task : ${tasks}" class="task-item" th:classappend="${task.isUrgent ? 'urgent' : task.getDueStatus()}">
+                            <div class="task-header">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <input type="checkbox" class="task-checkbox inProgress" th:value="${task.id}">
+                                    <span class="task-title" th:text="${task.title}"></span>
+                                    <span th:if="${task.isUrgent}" class="deadline soon">🔥 紧急</span>
+                                </div>
+                                <div class="task-actions">
+                                    <button class="btn-small btn-edit" th:onclick="'editTask(' + ${task.id} + ')'">编辑</button>
+                                    <button class="btn-small btn-complete" th:onclick="'completeTask(' + ${task.id} + ')'">完成</button>
+                                    <button class="btn-small btn-delete" th:onclick="'deleteTask(' + ${task.id} + ')'">删除</button>
+                                </div>
+                            </div>
+                            <div class="task-time">
+                                <div class="time-item">
+                                    <span>🕐 开始:</span>
+                                    <span th:text="${#temporals.format(task.startTime, 'MM-dd HH:mm')}"></span>
+                                </div>
+                                <div class="time-item">
+                                    <span>⏰ 截止:</span>
+                                    <span th:text="${#temporals.format(task.endTime, 'MM-dd HH:mm')}"></span>
+                                    <span class="deadline" th:if="${task.endTime.isBefore(T(java.time.LocalDateTime).now().plusDays(1))}" th:classappend="${task.endTime.isBefore(T(java.time.LocalDateTime).now()) ? 'soon' : ''}">
+                                        即将到期
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-info">
+                                    <span>进度</span>
+                                    <span th:text="${task.progress + '%'}"></span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" th:style="'width: ' + ${task.progress} + '%'" th:classappend="${task.progress >= 100} ? 'completed' : ''"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="empty-state" th:if="${tasks.size() == 0}">
+                    <h3>🎉 所有任务已完成！</h3>
+                    <p>创建新任务开始你的工作吧</p>
+                </div>
+            </div>
+
+        <div class="card" style="margin-top: 30px;" th:if="${completedTasks.size() > 0}">
+                <div class="card-header">
+                    <h2 class="section-title">
+                        <span class="emoji">✅</span> 已完成的任务
+                        <span class="badge" th:text="${completedTasks.size()}" style="background: #51cf66;">0</span>
+                    </h2>
+                </div>
+                <div>
+                    <div class="select-all">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="selectAllCompleted" onchange="toggleSelectAll('completed')">
+                            <span>全选</span>
+                        </label>
+                        <button class="btn btn-batch-delete" onclick="batchDelete('completed')" style="padding: 8px 16px; font-size: 0.9em;">批量删除</button>
+                    </div>
+                    <div class="task-list">
+                        <div th:each="task : ${completedTasks}" class="task-item completed">
+                            <div class="task-header">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <input type="checkbox" class="task-checkbox completed" value="" th:value="${task.id}">
+                                    <span class="task-title" th:text="${task.title}"></span>
+                                </div>
+                                <div class="task-actions">
+                                    <button class="btn-small btn-delete" th:onclick="'deleteTask(' + ${task.id} + ')'">删除</button>
+                                </div>
+                            </div>
+                            <div class="task-time">
+                                <div class="time-item">
+                                    <span>✅ 已完成于:</span>
+                                    <span th:text="${#temporals.format(task.endTime, 'MM-dd HH:mm')}"></span>
+                                </div>
+                            </div>
+                            <div class="progress-container">
+                                <div class="progress-bar">
+                                    <div class="progress-fill completed" style="width: 100%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>编辑任务</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="editForm" method="post" class="task-form">
+                <input type="hidden" id="editId" name="id">
+                <div class="form-group">
+                    <label>任务名称</label>
+                    <input type="text" id="editTitle" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label>任务描述</label>
+                    <textarea id="editDescription" name="description" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>开始时间</label>
+                        <input type="datetime-local" id="editStartTime" name="startTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>截止时间</label>
+                        <input type="datetime-local" id="editEndTime" name="endTime" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>进度 (%)</label>
+                        <input type="number" id="editProgress" name="progress" min="0" max="100">
+                    </div>
+                    <div class="form-group">
+                        <label>紧急任务</label>
+                        <input type="checkbox" id="editIsUrgent" name="isUrgent" style="width: auto; margin-top: 10px;">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">保存更改</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        async function editTask(id) {
+            try {
+                const response = await fetch('/tasks/' + id);
+                const task = await response.json();
+
+                document.getElementById('editId').value = task.id;
+                document.getElementById('editTitle').value = task.title;
+                document.getElementById('editDescription').value = task.description || '';
+                document.getElementById('editStartTime').value = task.startTime.slice(0, 16);
+                document.getElementById('editEndTime').value = task.endTime.slice(0, 16);
+                document.getElementById('editProgress').value = task.progress;
+                document.getElementById('editIsUrgent').checked = task.isUrgent;
+
+                document.getElementById('editForm').action = '/tasks/' + id + '/update';
+                document.getElementById('editModal').classList.add('active');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('获取任务信息失败');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').classList.remove('active');
+        }
+
+        async function deleteTask(id) {
+            if (confirm('确定要删除这个任务吗？')) {
+                const form = document.createElement('form');
+                form.method = 'post';
+                form.action = '/tasks/' + id + '/delete';
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        async function completeTask(id) {
+            if (confirm('确定要标记这个任务为已完成吗？')) {
+                const form = document.createElement('form');
+                form.method = 'post';
+                form.action = '/tasks/' + id + '/complete';
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        function toggleSelectAll(group) {
+            const checkboxes = document.querySelectorAll('.task-checkbox.' + group);
+            const selectAll = document.getElementById('selectAll' + (group === 'inProgress' ? 'InProgress' : 'Completed'));
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+        }
+
+        async function batchDelete(group) {
+            const checkboxes = document.querySelectorAll('.task-checkbox.' + group + ':checked');
+            if (checkboxes.length === 0) {
+                alert('请先选择要删除的任务');
+                return;
+            }
+
+            if (confirm('确定要删除选中的 ' + checkboxes.length + ' 个任务吗？')) {
+                const ids = Array.from(checkboxes).map(checkbox => checkbox.value);
+                
+                const form = document.createElement('form');
+                form.method = 'post';
+                form.action = '/tasks/batch-delete';
+                
+                ids.forEach(id => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'ids';
+                    input.value = id;
+                    form.appendChild(input);
+                });
+                
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        document.getElementById('editModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+    </script>
+</body>
+</html>
